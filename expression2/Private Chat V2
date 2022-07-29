@@ -1,0 +1,66 @@
+# MADE BY AndreyTsivis
+
+@name Private Chat V2
+@persist [ NET_ADDR PANEL_NAME ]:string
+@persist Ow:entity [ Say Cmd ]:string
+
+if( first() )
+{
+    NET_ADDR = "ChatNet"
+    
+    Ow = owner()
+    
+    dsJoinGroup(NET_ADDR)
+    dsSetScope(2)
+    
+    dsSend("connect",NET_ADDR,entity())
+    
+    PANEL_NAME = "Private Chat V2"
+    
+    dPanel(PANEL_NAME,vec2(20,425),vec2(375,83))
+    dTabHolder("tabH",PANEL_NAME,vec2(5,30),vec2(365,43))
+    dShow(PANEL_NAME,0)
+    dShowCloseButton(PANEL_NAME,0)
+    dTextBox("Message","tabH",vec2(10,10),280)
+    dButton("Send","tabH",vec2(300,10),vec2(50,20))
+}
+
+interval(250)
+runOnLast(1)
+
+dShow(PANEL_NAME,Ow:isTyping())
+
+if( dsClk() )
+{
+    local CMD = dsClkName()
+    
+    if( CMD == "connect" )
+    {
+        printColor(vec(0,255,0),"[+] ",vec(255,255,0),dsGetSender():owner():name(),vec(255)," connected to the chat.")
+    }
+    
+    if( CMD == "disconnect" )
+    {
+        printColor(vec(255,0,0),"[-] ",vec(255,255,0),dsGetSender():owner():name(),vec(255)," disconnected from the chat.")
+    }
+    
+    if( CMD == "message" )
+    {
+        printColor(vec(255,0,0),"[PRIVATE] ",vec(255,255,0),dsGetSender():owner():name(),": ",vec(255),dsGetString())
+    }
+}
+
+if( last() )
+{
+    dsSend("disconnect",NET_ADDR,entity())
+}
+
+if( changed(dClk("Send")) & dClk("Send") == 1 & dSval("Message"):length() > 0 )
+{
+    local MSG = dSval("Message")
+        
+    dsSend("message",NET_ADDR,MSG)
+    printColor(vec(255,0,0),"[PRIVATE] ",vec(255,255,0),owner():name(),": ",vec(255),MSG)
+    
+    dSetSval("Message","")
+}
