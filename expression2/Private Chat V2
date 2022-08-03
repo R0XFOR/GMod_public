@@ -24,33 +24,9 @@ if( first() )
     dTextBox("Message","tabH",vec2(10,10),280)
     dButton("Send","tabH",vec2(300,10),vec2(50,20))
     
-    VERSION = "2.1"
+    VERSION = "2.2"
     
     entity():setName(entity():getName()+" V"+VERSION)
-    
-    function string string:stringToByte()
-    {
-        local Out = ""
-    
-        for(I=1,This:length())
-        {
-            Out = Out+toByte(This[I])+" "
-        }
-    
-        return Out
-    }
-
-    function string string:byteToString()
-    {
-        local Out = ""
-    
-        for(I=1,This:explode(" "):count())
-        {
-            Out = Out+toChar(This:explode(" ")[I,string]:toNumber())
-        }
-    
-        return Out
-    }
 }
 
 interval(250)
@@ -76,7 +52,7 @@ if( dsClk() )
     {
         local PACKAGE = dsGetTable()
         
-        printColor( vec(255,0,0),"[PRIVATE] ",vec(255,255,0),PACKAGE["Sender",entity]:name(),": ",vec(255),PACKAGE["Message",string]:byteToString() )
+        printColor( vec(255,0,0),"[PRIVATE] ",vec(255,255,0),PACKAGE["Sender",entity]:name(),": ",vec(255),PACKAGE["Message",string] )
     }
 }
 
@@ -87,10 +63,10 @@ if( last() )
 
 if( changed(dClk("Send")) & dClk("Send") == 1 & dSval("Message"):length() > 0 )
 {
-    local PACKAGE = table( "Client Version" = VERSION, "Sender" = Ow, "Message" = dSval("Message"):stringToByte() )
+    local PACKAGE = table( "Client Version" = VERSION, "Sender" = Ow, "Message" = dSval("Message") )
         
     dsSend("message",NET_ADDR,PACKAGE)
-    printColor(vec(255,0,0),"[PRIVATE] ",vec(255,255,0),PACKAGE["Sender",entity]:name(),": ",vec(255),PACKAGE["Message",string]:byteToString())
+    printColor(vec(255,0,0),"[PRIVATE] ",vec(255,255,0),PACKAGE["Sender",entity]:name(),": ",vec(255),PACKAGE["Message",string])
     
     dSetSval("Message","")
 }
