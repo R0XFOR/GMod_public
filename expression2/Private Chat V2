@@ -1,7 +1,7 @@
 # MADE BY AndreyTsivis
 
-@name Private Chat V2
-@persist [ NET_ADDR PANEL_NAME ]:string
+@name Private Chat
+@persist [ NET_ADDR PANEL_NAME VERSION ]:string
 @persist Ow:entity [ Say Cmd ]:string
 
 if( first() )
@@ -23,6 +23,34 @@ if( first() )
     dShowCloseButton(PANEL_NAME,0)
     dTextBox("Message","tabH",vec2(10,10),280)
     dButton("Send","tabH",vec2(300,10),vec2(50,20))
+    
+    VERSION = "2.1"
+    
+    entity():setName(entity():getName()+" V"+VERSION)
+    
+    function string string:stringToByte()
+    {
+        local Out = ""
+    
+        for(I=1,This:length())
+        {
+            Out = Out+toByte(This[I])+" "
+        }
+    
+        return Out
+    }
+
+    function string string:byteToString()
+    {
+        local Out = ""
+    
+        for(I=1,This:explode(" "):count())
+        {
+            Out = Out+toChar(This:explode(" ")[I,string]:toNumber())
+        }
+    
+        return Out
+    }
 }
 
 interval(250)
@@ -46,7 +74,9 @@ if( dsClk() )
     
     if( CMD == "message" )
     {
-        printColor(vec(255,0,0),"[PRIVATE] ",vec(255,255,0),dsGetSender():owner():name(),": ",vec(255),dsGetString())
+        local PACKAGE = dsGetTable()
+        
+        printColor( vec(255,0,0),"[PRIVATE] ",vec(255,255,0),PACKAGE["Sender",entity]:name(),": ",vec(255),PACKAGE["Message",string]:byteToString() )
     }
 }
 
@@ -57,10 +87,10 @@ if( last() )
 
 if( changed(dClk("Send")) & dClk("Send") == 1 & dSval("Message"):length() > 0 )
 {
-    local MSG = dSval("Message")
+    local PACKAGE = table( "Client Version" = VERSION, "Sender" = Ow, "Message" = dSval("Message"):stringToByte() )
         
-    dsSend("message",NET_ADDR,MSG)
-    printColor(vec(255,0,0),"[PRIVATE] ",vec(255,255,0),owner():name(),": ",vec(255),MSG)
+    dsSend("message",NET_ADDR,PACKAGE)
+    printColor(vec(255,0,0),"[PRIVATE] ",vec(255,255,0),PACKAGE["Sender",entity]:name(),": ",vec(255),PACKAGE["Message",string]:byteToString())
     
     dSetSval("Message","")
 }
