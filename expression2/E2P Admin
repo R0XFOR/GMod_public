@@ -1,6 +1,6 @@
 @name E2P Admin
 @model models/bull/gates/resistor_nano.mdl
-@persist State Ow:entity
+@persist State [ Ow Target ]:entity PListTabl:table Version PList:array
 
 #include "include/e2pSimpleAdmin"
 #include "weaponizer"
@@ -16,7 +16,7 @@ if( first() ) {
     entity():noDraw(1)
     entity():noCollideAll(1)
         
-    Version = 1.5
+    Version = 1.6
     
     printColor(vec(0,255,63),"E2P Admin ",vec(255),"by",vec(255,255,0)," AndreyTsivis",vec(100)," (ver ",Version,")")
     printColor(vec(255),"To open the menu, press",vec(255,255,0)," Delete")
@@ -34,12 +34,41 @@ if( changed(owner():keyPressed("delete")) & owner():keyPressed("delete") ) {
     State=!State
 }
 
-Players=array()
-PList=players()
-for(I=1,PList:count()) { Players[I,string]=PList[I,entity]:name() }
-dDropBox("target","Panel",vec2(10,10),150)
-dArray("target",Players)
-Target=findPlayerByName(dSval("target"))
+if( first() )
+{
+    PList=players()
+    PListTabl = table()
+    for(I=1,PList:count())
+    {
+        PListTabl[PList[I,entity]:name(),entity] = PList[I,entity]
+    }
+    dDropBox("target","Panel",vec2(10,10),150)
+    dArray("target",PListTabl:keys())
+}
+
+if( changed(dSval("target")) )
+{
+    Target = PListTabl[dSval("target"),entity]
+}
+
+if( first() )
+{
+    function void entity:playerBlind( Status:number )
+    {
+        holoCreate(1,This:toWorld(vec(10,0,60)),vec(4),ang(0,0,0),vec4(0,0,0,255),"models/holograms/hq_hdome_thin.mdl")
+        holoVisible(1,players(),0)
+        holoVisible(1,This,Status)
+        holoMaterial(1,"lights/white")
+        holoParentAttachment(1,This,"forward")
+
+        holoCreate(2,This:toWorld(vec(10,0,60)),vec(4),ang(0,0,-180),vec4(0,0,0,255),"models/holograms/hq_hdome_thin.mdl")
+        holoVisible(2,players(),0)
+        holoVisible(2,This,Status)
+        holoMaterial(2,"lights/white")
+        holoParentAttachment(2,This,"forward")
+    }
+}
+
 dButton("Goto","Panel",vec2(170,10),vec2(40,20))
 dButton("Bring","Panel",vec2(220,10),vec2(40,20))
 dButton("Strip","Panel",vec2(270,10),vec2(40,20))
@@ -70,3 +99,4 @@ if(dClk("Set AR")) { Target:setArmor(dNval("Count")) }
 if(dClk("Explosion")) { Target:explosion() }
 if(dClk("Eye TP")) { Target:setPos(Ow:aimPos()) }
 if( changed(dNval("Vanish")) ) { Ow:noDraw(dNval("Vanish")) Ow:weapon():noDraw(dNval("Vanish")) }
+if( changed(dNval("Blind")) ) { Target:playerBlind( dNval("Blind") ) }
