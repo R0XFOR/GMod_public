@@ -3,7 +3,6 @@
 @persist State [ Ow Target ]:entity PListTabl:table Version PList:array
 
 #include "include/e2pSimpleAdmin"
-#include "weaponizer"
 
 interval(100)
 
