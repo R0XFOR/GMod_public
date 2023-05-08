@@ -1,4 +1,4 @@
-# MADE BY AndreyTsivis
+# MADE BY R0XFOR (STEAM_0:0:441798494)
 
 @name Private Chat
 @persist [ NET_ADDR PANEL_NAME VERSION ]:string
