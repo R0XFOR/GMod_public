@@ -1,0 +1,209 @@
+# MADE BY R0XFOR (STEAM_0:0:441798494)
+
+@name car control
+@inputs CarLink:wirelink
+@persist EjectDriver EjectPassagers Lock EngineStart EngineStop Throttle SetGear HandBrake Reverse
+@persist [ Owner Entity Car Driver ]:entity PShow [ Ranger1 Ranger2 ]:ranger Lenght
+@persist AutoLock Logs
+@persist FileName:string
+@model models/bull/gates/processor_mini.mdl
+
+@persist Time:string
+
+interval(1)
+runOnChat(1)
+
+if(first()) { 
+Version=1.4
+printColor(vec(255),"Car Controler made by",vec(255,255,0)," R0XFOR",vec(100)," (ver ",Version,")")
+printColor(vec(255),"Send ",vec(255,255,0),"/car",vec(255)," to open menu.")
+Entity=entity()
+Car=Entity:isWeldedTo()
+DefaultMass=Car:mass()
+
+AutoLock=0
+Logs=1
+
+dPanel("Car Control",vec2(20),vec2(300,280))
+dTabHolder("Holder","Car Control",vec2(5,30),vec2(290,245))
+dTab("Panel","Holder")
+
+dCheckBox("lock","Panel",vec2(10,10))
+dCheckBox("handbrake","Panel",vec2(10,30))
+dCheckBox("engine","Panel",vec2(10,50))
+dButton("enter","Panel",vec2(10,100),vec2(40,20))
+dButton("driver","Panel",vec2(55,100),vec2(40,20))
+dSlider("throttle","Panel",vec2(10,125),285,0,100)
+dSlider("reverse","Panel",vec2(10,150),285,0,100)
+dCheckBox("turret","Panel",vec2(10,70))
+dCheckBox("E2 hide","Panel",vec2(10,185))
+
+dLabel("Health:","Panel",vec2(160,12))
+dButton("damage","Panel",vec2(200,11),vec2(50,17))
+
+dLabel("Water Detector:","Panel",vec2(157,37))
+dButton("water","Panel",vec2(240,34),vec2(20))
+dText("water","")
+
+dCheckBox("UP","Panel",vec2(200,60))
+dCheckBox("DOWN","Panel",vec2(200,80))
+
+dShowCloseButton("Car Control",0)
+
+dShow("Car Control",0)
+
+holoCreate(100)
+holoAng(100,Car:toWorld(ang(2,0,0)))
+Pos=Car:forward()+vec(120,0,20)
+holoPos(100,Car:toWorld(Pos))
+holoParent(100,Car)
+holoAlpha(100,0)
+}
+
+Owner=owner()
+Entity=entity()
+Entity:setMass(0)
+Car=Entity:isWeldedTo()
+CarLink=Car:wirelink()
+Driver=CarLink["Driver",entity]
+HP=CarLink["Health",number]
+
+Ranger1=rangerOffset(1000,Car:toWorld(vec(90,0,0)),vec(0,-1,0))
+Aim=Ranger1:entity()
+
+Ranger2=rangerOffset(100000,holoEntity(1):pos(),Car:forward())
+
+runOnChat(1)
+
+Ow=owner()
+Say=Ow:lastSaid()
+
+if(chatClk(Ow)) {
+    if(Say=="/car") {
+        hideChat(1)
+        PShow=!PShow
+        dShow("Car Control",PShow)
+    }
+}
+
+if( (changed(dNval("lock")) & dNval("lock")==1) ) {
+    CarLink["Engine Stop",number]=1
+    CarLink["Handbrake",number]=1
+    CarLink["Throttle",number]=0
+    CarLink["Set Gear",number]=2
+    CarLink["Eject Driver",number]=1
+    CarLink["Eject Passengers",number]=1
+    Car:propFreeze(1)
+    timer("sleep1",100)
+    timer("sleep2",100)
+}
+
+if( (changed(dNval("lock")) & dNval("lock")==0) ) {
+    CarLink["Engine Stop",number]=0
+    CarLink["Handbrake",number]=0
+    CarLink["Throttle",number]=0
+    CarLink["Set Gear",number]=2
+    CarLink["Eject Driver",number]=0
+    CarLink["Eject Passengers",number]=0
+    CarLink["Lock",number]=0
+    Car:propFreeze(0)
+    stoptimer("sleep1")
+    stoptimer("sleep2")
+    stoptimer("sleep3")
+    #stopAllTimers()
+}
+
+if(AutoLock==1) {
+    if(Owner:pos():distance(Car:pos())>500) { dSetNval("lock",1) }
+    if(Owner:pos():distance(Car:pos())<150) { dSetNval("lock",0) }
+}
+
+if( changed(dNval("handbrake")) ) { CarLink["Handbrake",number]=dNval("handbrake") }
+if( changed(dNval("engine")) & dNval("engine")==0 ) { CarLink["Engine Stop",number]=1 timer("engine",200) }
+if( changed(dNval("engine")) & dNval("engine")==1 ) { CarLink["Engine Start",number]=1 timer("engine",200) }
+if( changed(dNval("throttle")) ) { CarLink["Throttle",number]=dNval("throttle")*0.01 }
+if( dClk("driver") ) { print("Driver: "+Driver:name()) }
+if( dClk("enter") ) { Car:use() }
+if( changed(dNval("reverse")) ) { CarLink["Brake/Reverse",number]=dNval("reverse")*0.01 }
+if( changed(dNval("E2 hide")) ) { Entity:noDraw(dNval("E2 hide")) }
+#if( dClk("use") ) { Aim:use() }
+if( changed(HP) ) { dText("damage",HP:toString()) dColor("damage",255,0,0,255) timer("dmg color off",200)}
+if(dNval("turret")==1) { if(Car:driver():keyPressed("T")==1) { entity():shootTo( holoEntity(100):toWorld(vec(120,0,10))+holoEntity(100):vel(),holoEntity(100):forward(),0,1000,100,"fire" ) } }
+if( changed(Car:isUnderWater()) & Car:isUnderWater()==1 ) { dColor("water",200,0,0,255) }
+if( changed(Car:isUnderWater()) & Car:isUnderWater()==0 ) { dColor("water",0,200,0,255) }
+
+if(dNval("UP")==1) { Lenght=Lenght+0.01 }
+if(dNval("DOWN")==1) { Lenght=Lenght-0.01 }
+
+if(Lenght<-0.3) { Lenght=-0.3 }
+if(Lenght>1) { Lenght=1}
+
+#entity():isWeldedTo():editValue("RearSuspensionHeight",Lenght:toString())
+#entity():isWeldedTo():editValue("FrontSuspensionHeight",Lenght:toString())
+
+if( CarLink["Active",number]==0 ) { Lenght=Lenght-0.01 }
+if( CarLink["Active",number]==1 & Lenght<1.1 ) { Lenght=Lenght+0.01 }
+
+#TIMERS
+
+if(clk("sleep1")) { CarLink["Lock",number]=1 }
+
+if(clk("sleep2")) {
+    CarLink["Eject Driver",number]=1
+    CarLink["Eject Passengers",number]=1
+    CarLink["Engine Stop",number]=1
+    #Lock=1
+    timer("sleep3",100)
+}
+
+if(clk("sleep3")) {
+    CarLink["Eject Driver",number]=0
+    CarLink["Eject Passengers",number]=0
+    CarLink["Engine Stop",number]=0
+    #Lock=0
+    timer("sleep2",100)
+}
+
+if(clk("engine")) {
+    CarLink["Engine Start",number]=0
+    CarLink["Engine Stop",number]=0
+}
+
+if(clk("reset")) { Reset=0 }
+if(clk("dmg color off")) { dColor("damage",255,255,255,255) }
+
+
+# LOGS
+
+
+FileName="car_logs/"+date()["day",number]+" "+date()["month",number]+" "+date()["year",number]+" "+Car:model():explode("/")[Car:model():explode("/"):count(),string]:explode(".")[1,string]+".txt"
+
+Damage=Car:getDamage()
+Attacker=Car:getAttacker()
+
+if(Logs==1) {
+
+if(changed(date()["min",number])) {
+    Time="["+date()["hour",number]+":"+date()["min",number]+" "+date()["day",number]+"."+date()["month",number]+"."+date()["year",number]+"]"
+}
+
+if( changed(Driver)==1 & Driver!=noentity() ) {
+    timer("Driver",1000)
+}
+
+if( changed(HP)==1 & Damage>0 ) {
+    fileAppend(FileName,Time+" "+"Damage: "+round(Damage,2)+" Attacker: "+Attacker:name()+" ("+Attacker:steamID()+").\n")
+}
+
+if( changed(CarLink["Active",number])==1 ) {
+    if(CarLink["Active",number]==1) {
+        fileAppend(FileName,Time+" "+"Engine started.\n")
+    }
+    if(CarLink["Active",number]==0) {
+        fileAppend(FileName,Time+" "+"Engine stoped.\n")
+    }
+}
+
+}
+
+if(clk("Driver")) { fileAppend(FileName,Time+" "+"Driver: "+Driver:name()+" ("+Driver:steamID()+").\n") }
