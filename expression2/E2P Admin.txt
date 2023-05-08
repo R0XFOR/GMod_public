@@ -1,13 +1,21 @@
+# MADE BY R0XFOR (STEAM_0:0:441798494)
+
 @name E2P Admin
 @model models/bull/gates/resistor_nano.mdl
-@persist State [ Ow Target ]:entity PListTabl:table Version PList:array
+@persist State [ Ow Target ]:entity PListTabl:table Version:string PList:array
 
 #include "include/e2pSimpleAdmin"
 
 interval(100)
 
+if(dupefinished())
+{
+    reset()
+}
+
 if( first() ) {
     Ow = owner()
+    State = 1
     
     noDuplications()
     entity():setName(" ")
@@ -15,25 +23,24 @@ if( first() ) {
     entity():noDraw(1)
     entity():noCollideAll(1)
         
-    Version = 1.6
+    Version = "2.1"
     
-    printColor(vec(0,255,63),"E2P Admin ",vec(255),"by",vec(255,255,0)," AndreyTsivis",vec(100)," (ver ",Version,")")
+    printColor(vec(0,255,63), "E2P Admin ", vec(255), "by", vec(255,255,0), " R0XFOR", vec(100)," (ver ",Version,")")
     printColor(vec(255),"To open the menu, press",vec(255,255,0)," Delete")
-    
 }
 
 Ow:setWeaponColor(hsv2rgb((curtime()*20)%360,1,1))
 
-dPanel("E2P Admin by AndreyTsivis",vec2(100,100),vec2(400,220))
-dTabHolder("tabH","E2P Admin by AndreyTsivis",vec2(5,30),vec2(390,180))
+dPanel("E2P Admin by R0XFOR",vec2(100,100),vec2(400,220+40)) # 400, 220
+dTabHolder("tabH","E2P Admin by R0XFOR",vec2(5,30),vec2(390,220)) # 390, 180
 dTab("Panel","tabH")
-dShow("E2P Admin by AndreyTsivis",State)
+dShow("E2P Admin by R0XFOR",State)
 
 if( changed(owner():keyPressed("delete")) & owner():keyPressed("delete") ) {
     State=!State
 }
 
-if( first() )
+if( first() | changed(players():count()) )
 {
     PList=players()
     PListTabl = table()
@@ -52,19 +59,19 @@ if( changed(dSval("target")) )
 
 if( first() )
 {
-    function void entity:playerBlind( Status:number )
+    function void entity:god( Status:number )
     {
-        holoCreate(1,This:toWorld(vec(10,0,60)),vec(4),ang(0,0,0),vec4(0,0,0,255),"models/holograms/hq_hdome_thin.mdl")
-        holoVisible(1,players(),0)
-        holoVisible(1,This,Status)
-        holoMaterial(1,"lights/white")
-        holoParentAttachment(1,This,"forward")
-
-        holoCreate(2,This:toWorld(vec(10,0,60)),vec(4),ang(0,0,-180),vec4(0,0,0,255),"models/holograms/hq_hdome_thin.mdl")
-        holoVisible(2,players(),0)
-        holoVisible(2,This,Status)
-        holoMaterial(2,"lights/white")
-        holoParentAttachment(2,This,"forward")
+        if(Status == 1)
+        {
+            Ow:setHealth(10000)
+            Ow:setMaxHealth(10000)
+        }
+        
+        if(changed(Status) & Status == 0)
+        {
+            Ow:setHealth(100)
+            Ow:setMaxHealth(100)
+        }
     }
 }
 
@@ -73,29 +80,33 @@ dButton("Bring","Panel",vec2(220,10),vec2(40,20))
 dButton("Strip","Panel",vec2(270,10),vec2(40,20))
 dButton("CleanUP","Panel",vec2(320,10),vec2(50,20))
 dButton("RagDoll","Panel",vec2(170,38),vec2(50,20))
-dCheckBox("NoClip","Panel",vec2(10,120))
+dCheckBox("NoClip","Panel",vec2(10,160))
 dCheckBox("Freeze","Panel",vec2(10,40))
-dCheckBox("Blind","Panel",vec2(80,40))
-dCheckBox("Vanish","Panel",vec2(80,120))
+dCheckBox("Vanish","Panel",vec2(80,160))
 dButton("Explosion","Panel",vec2(230,38),vec2(60,20))
 dButton("Eye TP","Panel",vec2(300,38),vec2(50,20))
+dButton("PropDel", "Panel", vec2(10, 65), vec2(50, 20))
+dCheckBox("God","Panel",vec2(150,160))
 
-dSlider("Count","Panel",vec2(10,50),300,1,100)
-dButton("Damage","Panel",vec2(8,85),vec2(50,20))
-dButton("Set HP","Panel",vec2(70,85),vec2(50,20))
-dButton("Set AR","Panel",vec2(130,85),vec2(50,20))
+dSlider("Count","Panel",vec2(-120 + 190,113),300,0,100)
+dText("Count", "")
+dButton("Damage","Panel",vec2(8,125),vec2(50,20))
+dButton("Set HP","Panel",vec2(70,125),vec2(50,20))
+dButton("Set AR","Panel",vec2(130,125),vec2(50,20))
 
 if(dClk("Goto")) { e2pGoto(Ow,Target) }
 if(dClk("Bring")) { e2pBring(Ow,Target) }
 if(dClk("Strip")) { e2pPlayerStrip(Target) }
 if(dClk("CleanUP")) { e2pPlayerCleanup(Target) }
 if(dClk("RagDoll")) { Target:playerRagdoll() }
-if( changed(dNval("NoClip")) ) { Ow:playerNoclip(dNval("NoClip")) }
-if( changed(dNval("Freeze")) ) { Target:e2pPlayerFreeze(dNval("Freeze")) }
-if(dClk("Damage")) { Target:takeDamage(dNval("Count"),"dissolve") }
+if(changed(dNval("NoClip")) ) { Ow:playerNoclip(dNval("NoClip")) }
+if(changed(dNval("Freeze")) ) { Target:e2pPlayerFreeze(dNval("Freeze")) }
+if(dClk("Damage")) { Target:takeDamage(dNval("Count"),"dissolve",vec(),Target,Target) }
 if(dClk("Set HP")) { Target:setHealth(dNval("Count")) }
 if(dClk("Set AR")) { Target:setArmor(dNval("Count")) }
 if(dClk("Explosion")) { Target:explosion() }
 if(dClk("Eye TP")) { Target:setPos(Ow:aimPos()) }
-if( changed(dNval("Vanish")) ) { Ow:noDraw(dNval("Vanish")) Ow:weapon():noDraw(dNval("Vanish")) }
-if( changed(dNval("Blind")) ) { Target:playerBlind( dNval("Blind") ) }
+if(changed(dNval("Vanish"))) { Ow:noDraw(dNval("Vanish")) Ow:weapon():noDraw(dNval("Vanish")) }
+if(dClk("PropDel")) { Ow:aimEntity():propDelete() }
+
+Ow:god(dNval("God"))
