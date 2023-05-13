@@ -17,7 +17,7 @@ if( first() )
     
     PANEL_NAME = "Private Chat V2"
     
-    dPanel(PANEL_NAME,vec2(20,425),vec2(375,83))
+    dPanel(PANEL_NAME,vec2(20,200),vec2(375,83))
     dTabHolder("tabH",PANEL_NAME,vec2(5,30),vec2(365,43))
     dShow(PANEL_NAME,0)
     dShowCloseButton(PANEL_NAME,0)
