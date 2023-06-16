@@ -6,7 +6,7 @@
 
 if( first() )
 {
-    NET_ADDR = "ChatNet"
+    NET_ADDR = "" # INSERT NAME HERE
     
     Ow = owner()
     
