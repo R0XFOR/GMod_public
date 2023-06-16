@@ -7,7 +7,7 @@ runOnLast(1)
 
 if( first() )
 {
-    NET_ADDR = "ChatNet"
+    NET_ADDR = "" # INSERT NAME HERE
     
     dsJoinGroup(NET_ADDR)
     dsSetScope(2)
