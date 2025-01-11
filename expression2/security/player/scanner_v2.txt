@@ -1,0 +1,326 @@
+@name Scanner
+@inputs [ Keypad Socket ]:wirelink
+@outputs Indicator:vector State Opened OpenedChange Scanner_Group:string
+@persist ACCESS_LEVEL HOLD_TIME SWITCH_MODE ENABLE_HACKING HACK_TIME BOX NET_ADDR:string
+@persist Find:entity Lockdown Hacking HackingFinishTime Use UseSec KeypadState Whitelist:table
+@model models/beer/wiremod/targetfinder.mdl
+
+    ########################################
+    # MADE BY R0XFOR (STEAM_0:0:441798494) #
+    # Discord: @r0xfor                     #
+    # Github: https://github.com/R0XFOR    #
+    #                                      #
+    # Whitelist path:                      #
+    # e2shared/scanners/whitelist.txt      #
+    ########################################
+
+interval(100)
+runOnUse(1)
+runOnHTTP(1)
+
+E = entity()
+
+if( dupefinished() ) { reset() }
+
+if( first() )
+{
+    ACCESS_LEVEL = 0
+    HOLD_TIME = 3 # seconds
+    SWITCH_MODE = 0
+    ENABLE_HACKING = 1
+    HACK_TIME = 8 # seconds
+    
+    NET_ADDR = "C.A.S.S.I.E. Network"
+    
+    dsJoinGroup(NET_ADDR)
+    dsSetScope(2)
+    
+    BOX = 30
+    
+    E:setName("Keycard Scanner" + " [LEVEL " + ACCESS_LEVEL + "]")
+    E:noCollideAll(0)
+    E:setMaterial("phoenix_storms/concrete1")
+    E:setColor(vec(49))
+    E:propShadow(1)
+    
+    Hacking = 0
+    State = 0
+    Lockdown = 0
+    Opened = 0
+    
+    timer("whitelist_check",1)
+}
+
+if(first())
+{
+    holoCreate(1)
+    holoModel(1,"models/led2.mdl")
+    holoPos(1,E:toWorld(vec(4.2,2,1.5)))
+    holoAng(1,E:toWorld(ang(20,0,0)))
+    holoMaterial(1,"phoenix_storms/concrete1")
+    holoParent(1,E)
+
+    holoCreate(2)
+    holoModel(2,"models/led2.mdl")
+    holoPos(2,E:toWorld(vec(4.2,-2,1.5)))
+    holoAng(2,E:toWorld(ang(20,0,0)))
+    holoMaterial(2,"phoenix_storms/concrete1")
+    holoParent(2,E)
+    
+    holoCreate(3)
+    holoModel(3,"models/holograms/plane.mdl")
+    holoPos(3,E:toWorld(vec(0.5,0,1.7)))
+    holoAng(3,E:toWorld(ang(0,0,0)))
+    holoScale(3,vec(0.3,0.55,0.2))
+    holoMaterial(3,"phoenix_storms/concrete1")
+    holoParent(3,E)
+}
+
+### WHITELIST
+
+### FILE
+
+if(fileCanLoad() & (clk("whitelist_check") | first()))
+{
+    fileLoad(">e2shared/scanners/whitelist.txt")
+    timer("whitelist_check",30 * 1000)
+}
+
+if(fileClk() & fileLoaded())
+{
+    Whitelist = table()
+    
+    local List = fileRead():explode("\n")   List:remove(1)
+    
+    for(I = 1,List:count())
+    {
+        if(List[I,string]:length() > 0 & List[I,string][1] != "#")
+        {
+            local Ply = List[I,string]:explode(";")
+            
+            Whitelist[Ply[1,string],table] = table(Ply[2,string],Ply[3,string]:toNumber())
+        }
+    }
+}
+
+### GOOGLE SHEETS
+
+#[
+if(httpCanRequest() & (clk("whitelist_check") | first()))
+{
+    local SheetId = "" # Place here your google sheetd id
+    local APIKey = "" # Place here your API key
+    local URL = "https://sheets.googleapis.com/v4/spreadsheets/" + SheetId + "/values/Scanners?key=" + APIKey
+    
+    httpRequest(URL)
+}
+
+if(httpClk() & httpSuccess())
+{
+    Whitelist = table()
+    local Values = jsonDecode(httpData())["values",table]
+    
+    for(I = 1, Values:count())
+    {
+        local User = Values[I,table]
+        
+        if(User:count() == 0) { continue }
+        local SteamID = User[1,string]
+        local Name = User[2,string]
+        local AccessLevel = User[3,string]
+        
+        Whitelist[SteamID,table] = table(Name,AccessLevel:toNumber())
+    }
+}
+]#
+
+### END
+
+if(first() | dupefinished() | duped())
+{
+    function number entity:getWepList()
+    {
+        local Wep = This:weapon():type() == "keypad_cracker" | This:weapon():type() == "weapon_uni_cracker"
+        return Wep
+    }
+    
+    function void accessGranted([Sound Ind]:number)
+    {
+        if(Hacking) { Hacking = 0 timer("rst_name",1000) stoptimer("Hacking") }
+            
+        if(Sound) { E:soundPlay("access_grant",0.203,"buttons/button24.wav") }
+        if(Ind) { holoColor(3,vec(0,255,0)) }
+            
+        if( SWITCH_MODE == 0 & State == 0 )
+        {
+            State = 1
+            timer("off",HOLD_TIME * 1000)
+        }elseif( SWITCH_MODE == 1 )
+        {
+            State = !State
+            timer("off_switch",1000)
+        }
+    }
+    
+    function table getWhitelist(ID:string) { stoptimer("whitelist_check") timer("whitelist_check",1) return Whitelist[ID,table] }
+}
+
+Indicator = holoEntity(3):getColor()
+
+findIncludeClass("player")
+findInBox(E:toWorld(vec(BOX)),E:toWorld(vec(-BOX)))
+Finds = findToArray()
+
+foreach(_:number, V:entity = Finds)
+{
+    local Closest = findClosest(E:pos())
+    
+    if( V:id() == Closest:id() & V:aimEntity() == E ) { Find = V }
+}
+
+if(changed(Finds:count()) & Finds:count() == 0 & Find:isValid()) { Find = noentity() }
+
+#AAA = Find:getWepList()
+
+OpenedChange = changed(Opened)
+
+if(dsClk())
+{
+    local CMD = dsClkName()
+    
+    if(CMD == "connect_request")
+    {
+        local DATA = dsGetString()
+        Scanner_Group = DATA
+        
+        dsSendDirect("connect_request_accept",dsGetSender(),table(entity(),Scanner_Group))
+    }
+    
+    if(CMD == "access_granted")
+    {
+        local SWITCH = dsGetNumber()
+        
+        if(SWITCH == 0) { accessGranted(0,0) }
+        elseif(SWITCH == 1) { State = !State }
+    }
+    
+    if(CMD == "lockdown")
+    {
+        State = 0
+        Lockdown = !Lockdown
+        if(Lockdown) { holoColor(3,vec(255,0,0)) }
+        elseif(!Lockdown) { holoColor(3,vec(79)) }
+    }
+    
+    if(CMD == "group_name_request")
+    {
+        dsSendDirect("group_name",dsGetSender(),Scanner_Group)
+    }
+}
+
+Use = changed(Find:keyUse()) & Find:keyUse() == 1 & Find:aimEntity() == E
+UseSec = changed(Find:keyAttack1()) & Find:keyAttack1() == 1 & Find:aimEntity() == E
+
+if(Keypad:entity():isValid())
+{
+    local KeypadType = Keypad:entity():type()
+    
+    if(KeypadType == "keypad_wire")
+    {
+        KeypadState = Keypad["Access Granted",number] - Keypad["Access Denied",number]
+    }elseif(KeypadType == "gmod_wire_keypad")
+    {
+        KeypadState = Keypad["Valid",number] - Keypad["Invalid",number]
+    }
+}
+
+if(!Lockdown)
+{
+    local AntiSpam = State & !SWITCH_MODE
+    
+    if(Use & !Find:getWepList())
+    {
+        local TARGET = getWhitelist(Find:steamID64())
+        
+        if(((TARGET[2,number] >= ACCESS_LEVEL & TARGET[1,string] == Find:name())) & AntiSpam == 0)
+        {
+            accessGranted(1,1)
+        }elseif((TARGET[2,number] < ACCESS_LEVEL & !Hacking & AntiSpam == 0) | TARGET[1,string]:length() == 0)
+        {
+            State = -1
+            E:soundPlay("access_denied",0.462,"buttons/button11.wav")
+            holoColor(3,vec(255,0,0))
+            timer("off",HOLD_TIME*1000)
+        }
+    }
+    
+    if(changed(KeypadState) & KeypadState == 1) { accessGranted(0,1) }
+    elseif(changed(KeypadState) & KeypadState == -1)
+    {
+        State = -1
+        holoColor(3,vec(255,0,0))
+        timer("off",HOLD_TIME*1000)    
+    }
+    
+    if((Use | UseSec) & !Hacking & Find:getWepList() & ENABLE_HACKING) { Hacking = 1 timer("access_granted",HACK_TIME * 1000) HackingFinishTime = systime() + HACK_TIME }
+}
+
+if(changed(Hacking) & Hacking | clk("Hacking"))
+{
+    E:setName("Keycard Scanner" + " [LEVEL " + ACCESS_LEVEL + "]" + "\n HACKING : " + round(HackingFinishTime - systime(), 0) + " s")
+    
+    holoColor(3,vec(255,255,0))
+    soundPlay(1,0.276,"buttons/blip2.wav")
+    soundPitch(1,90)
+    timer("off_switch",500)
+    timer("Hacking",1000)
+}
+
+if(changed(Find:aimEntity() == E) & Find:aimEntity() != E & Hacking)
+{
+    Hacking = 0
+    stoptimer("Hacking")
+    stoptimer("access_granted")
+    timer("rst_name",1000)
+}
+
+if(changed(State) & State == 1)
+{
+    holoColor(1,vec(0,100,0))
+    holoColor(2,vec(0,100,0))
+    
+    Opened = 1
+}elseif(changed(State) & State == -1)
+{
+    holoColor(1,vec(100,0,0))
+    holoColor(2,vec(100,0,0))
+    
+    Opened = 0
+}elseif(changed(State) & State == 0)
+{
+    holoColor(1,vec(69))
+    holoColor(2,vec(69))
+    
+    Opened = 0
+}
+
+if(clk("off"))
+{
+    State = 0
+    if(!Lockdown) { holoColor(3,vec(79)) }
+    elseif(Lockdown) { holoColor(3,vec(255,0,0)) }
+}
+
+if(clk("off_switch") | first())
+{
+    if(!Lockdown) { holoColor(3,vec(79)) }
+    elseif(Lockdown) { holoColor(3,vec(255,0,0)) }
+}
+
+if(clk("access_granted")) { accessGranted(1,1) }
+if(clk("rst_name")) { E:setName("Keycard Scanner" + " [LEVEL " + ACCESS_LEVEL + "]") }
+
+event removed(_:number)
+{
+    dsSend("scanner_disconnect",NET_ADDR,table(entity(),Scanner_Group))
+}
