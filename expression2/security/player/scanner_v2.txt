@@ -1,5 +1,5 @@
 @name Scanner
-@inputs [ Keypad Socket ]:wirelink
+@inputs [ Keypad ]:wirelink
 @outputs Indicator:vector State Opened OpenedChange Scanner_Group:string
 @persist ACCESS_LEVEL HOLD_TIME SWITCH_MODE ENABLE_HACKING HACK_TIME BOX NET_ADDR:string
 @persist Find:entity Lockdown Hacking HackingFinishTime Use UseSec KeypadState Whitelist:table
